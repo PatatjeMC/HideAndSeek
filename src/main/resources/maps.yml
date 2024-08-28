@@ -1,0 +1,28 @@
+arena1:
+  name: "&cVoorbeeld Arena 1"
+  description: "&7Dit is een voorbeeld arena"
+  world: "world"
+  waitingRoom:
+    world: "world"
+    x: 0
+    y: 64
+    z: 0
+    yaw: 0
+    pitch: 0
+  spawnPoints:
+    - 1:
+      name: "&cSpawn 1"
+      description: "&7Dit is spawn 1"
+      x: 0
+      y: 64
+      z: 0
+      yaw: 0
+      pitch: 0
+    - 2:
+      name: "&cSpawn 2"
+      description: "&7Dit is spawn 2"
+      x: 0
+      y: 64
+      z: 0
+      yaw: 0
+      pitch: 0

@@ -1,0 +1,4 @@
+name: HideAndSeek
+version: '${project.version}'
+main: dev.patatje.hideandseek.Main
+api-version: '1.20'
