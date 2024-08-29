@@ -96,8 +96,8 @@ public class ArenaManager {
             ArrayList<SpawnPoint> spawnPoints = new ArrayList<>();
 
             // Loop through all the spawn points in the arena config and load them
-            for(String spawnPointKey : arenaConfig.getConfigurationSection("spawnLocations").getKeys(false)) {
-                ConfigurationSection spawnPointConfig = arenaConfig.getConfigurationSection("spawnLocations." + spawnPointKey);
+            for(String spawnPointKey : arenaConfig.getConfigurationSection("spawnPoints").getKeys(false)) {
+                ConfigurationSection spawnPointConfig = arenaConfig.getConfigurationSection("spawnPoints." + spawnPointKey);
 
                 // Check if the spawn point has all the required fields
                 if(
@@ -109,7 +109,7 @@ public class ArenaManager {
                         !spawnPointConfig.contains("yaw") ||
                         !spawnPointConfig.contains("pitch")
                 ) {
-                    plugin.getLogger().severe("Invalid spawn location for arena " + arenaKey);
+                    plugin.getLogger().severe("Invalid spawn point " + spawnPointKey + " for arena " + arenaKey);
                     continue;
                 }
 
