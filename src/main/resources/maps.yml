@@ -10,7 +10,7 @@ arena1:
     yaw: 0
     pitch: 0
   spawnPoints:
-    - spawn1:
+    spawn1:
       name: "&cSpawn 1"
       description: "&7Dit is spawn 1"
       x: 0
@@ -18,7 +18,7 @@ arena1:
       z: 0
       yaw: 0
       pitch: 0
-    - spawn2:
+    spawn2:
       name: "&cSpawn 2"
       description: "&7Dit is spawn 2"
       x: 0
