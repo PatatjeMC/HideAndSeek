@@ -47,7 +47,7 @@ public class ArenaManager {
                     !arenaConfig.contains("description") ||
                     !arenaConfig.contains("world") ||
                     !arenaConfig.contains("waitingRoom") ||
-                    !arenaConfig.contains("spawnLocations")
+                    !arenaConfig.contains("spawnPoints")
             ) {
                 plugin.getLogger().severe("Invalid arena configuration for arena " + arenaKey);
                 continue;
@@ -137,7 +137,7 @@ public class ArenaManager {
             arenas.put(arenaKey, arena);
         }
     }
-    
+
     public Arena getArena(String name) {
         return arenas.get(name);
     }

@@ -8,11 +8,15 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        getLogger().info("Hide and Seek plugin is loading...");
+
         //Load the config file
         this.saveDefaultConfig();
 
         //Create the arena manager which will load the arenas
         arenaManager = new ArenaManager(this);
+
+        getLogger().info("Hide and Seek plugin has been loaded!");
     }
 
     @Override
