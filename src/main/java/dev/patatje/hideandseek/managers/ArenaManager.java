@@ -1,13 +1,14 @@
 package dev.patatje.hideandseek.managers;
 
-import dev.patatje.hideandseek.Main;
-import dev.patatje.hideandseek.utils.Arena;
-import dev.patatje.hideandseek.utils.SpawnPoint;
+import dev.patatje.hideandseek.HideAndSeek;
+import dev.patatje.hideandseek.instances.Arena;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,9 +19,9 @@ public class ArenaManager {
 
     private File arenasFile;
     private YamlConfiguration arenasConfig;
-    private Main plugin;
+    private HideAndSeek plugin;
 
-    public ArenaManager(Main plugin) {
+    public ArenaManager(HideAndSeek plugin) {
         this.plugin = plugin;
         setupArenasConfig();
         loadArenas();
@@ -29,6 +30,7 @@ public class ArenaManager {
     private void setupArenasConfig() {
         arenasFile = new File(plugin.getDataFolder(), "maps.yml");
 
+        // Create the arenas config file if it doesn't exist
         if (!arenasFile.exists()) {
             arenasFile.getParentFile().mkdirs();
             plugin.saveResource("maps.yml", false);
@@ -46,8 +48,8 @@ public class ArenaManager {
                     !arenaConfig.contains("name") ||
                     !arenaConfig.contains("description") ||
                     !arenaConfig.contains("world") ||
-                    !arenaConfig.contains("waitingRoom") ||
-                    !arenaConfig.contains("spawnPoints")
+                    !arenaConfig.contains("waiting-room") ||
+                    !arenaConfig.contains("spawn-points")
             ) {
                 plugin.getLogger().severe("Invalid arena configuration for arena " + arenaKey);
                 continue;
@@ -66,12 +68,12 @@ public class ArenaManager {
 
             // Check if the waiting room location has all the required fields
             if(
-                    !arenaConfig.contains("waitingRoom.world") ||
-                    !arenaConfig.contains("waitingRoom.x") ||
-                    !arenaConfig.contains("waitingRoom.y") ||
-                    !arenaConfig.contains("waitingRoom.z") ||
-                    !arenaConfig.contains("waitingRoom.yaw") ||
-                    !arenaConfig.contains("waitingRoom.pitch")
+                    !arenaConfig.contains("waiting-room.world") ||
+                    !arenaConfig.contains("waiting-room.x") ||
+                    !arenaConfig.contains("waiting-room.y") ||
+                    !arenaConfig.contains("waiting-room.z") ||
+                    !arenaConfig.contains("waiting-room.yaw") ||
+                    !arenaConfig.contains("waiting-room.pitch")
             ) {
                 plugin.getLogger().severe("Invalid waiting room location for arena " + arenaKey);
                 continue;
@@ -79,12 +81,12 @@ public class ArenaManager {
 
             // Get the waiting room location
             Location waitingLocation = new Location(
-                    Bukkit.getWorld(arenaConfig.getString("waitingRoom.world")),
-                    arenaConfig.getDouble("waitingRoom.x"),
-                    arenaConfig.getDouble("waitingRoom.y"),
-                    arenaConfig.getDouble("waitingRoom.z"),
-                    (float) arenaConfig.getDouble("waitingRoom.yaw"),
-                    (float) arenaConfig.getDouble("waitingRoom.pitch")
+                    Bukkit.getWorld(arenaConfig.getString("waiting-room.world")),
+                    arenaConfig.getDouble("waiting-room.x"),
+                    arenaConfig.getDouble("waiting-room.y"),
+                    arenaConfig.getDouble("waiting-room.z"),
+                    (float) arenaConfig.getDouble("waiting-room.yaw"),
+                    (float) arenaConfig.getDouble("waiting-room.pitch")
             );
 
             // Check if the waiting room world exists
@@ -93,16 +95,14 @@ public class ArenaManager {
                 continue;
             }
 
-            ArrayList<SpawnPoint> spawnPoints = new ArrayList<>();
+            ArrayList<Location> spawnPoints = new ArrayList<>();
 
             // Loop through all the spawn points in the arena config and load them
-            for(String spawnPointKey : arenaConfig.getConfigurationSection("spawnPoints").getKeys(false)) {
-                ConfigurationSection spawnPointConfig = arenaConfig.getConfigurationSection("spawnPoints." + spawnPointKey);
+            for(String spawnPointKey : arenaConfig.getConfigurationSection("spawn-points").getKeys(false)) {
+                ConfigurationSection spawnPointConfig = arenaConfig.getConfigurationSection("spawn-points." + spawnPointKey);
 
                 // Check if the spawn point has all the required fields
                 if(
-                        !spawnPointConfig.contains("name") ||
-                        !spawnPointConfig.contains("description") ||
                         !spawnPointConfig.contains("x") ||
                         !spawnPointConfig.contains("y") ||
                         !spawnPointConfig.contains("z") ||
@@ -123,23 +123,38 @@ public class ArenaManager {
                         (float) spawnPointConfig.getDouble("pitch")
                 );
 
-                // Create a new spawn point object and add it to the list of spawn points
-                SpawnPoint spawnPoint = new SpawnPoint(
-                        spawnPointConfig.getString("name"),
-                        spawnPointConfig.getString("description"),
-                        spawnLocation
-                );
-                spawnPoints.add(spawnPoint);
+                spawnPoints.add(spawnLocation);
+            }
+
+            ArrayList<Material> allowedBlocks = new ArrayList<>();
+
+            for(String allowedBlock : arenaConfig.getStringList("allowed-blocks")) {
+                // Check if the block is a valid block
+                if(Material.getMaterial(allowedBlock) == null) {
+                    plugin.getLogger().severe("Invalid block " + allowedBlock + " for arena " + arenaKey);
+                    continue;
+                }
+
+                allowedBlocks.add(Material.getMaterial(allowedBlock));
             }
 
             // Create a new arena object and add it to the list of arenas
-            Arena arena = new Arena(name, description, world, waitingLocation, spawnPoints);
+            Arena arena = new Arena(plugin, name, description, world, waitingLocation, spawnPoints, allowedBlocks);
             arenas.put(arenaKey, arena);
         }
     }
 
     public Arena getArena(String name) {
         return arenas.get(name);
+    }
+
+    public Arena getArena(Player player) {
+        for(Arena arena : arenas.values()) {
+            if(arena.getPlayers().contains(player.getUniqueId())) {
+                return arena;
+            }
+        }
+        return null;
     }
 
     public HashMap<String, Arena> getArenas() {

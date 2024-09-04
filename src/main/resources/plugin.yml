@@ -1,4 +1,12 @@
 name: HideAndSeek
 version: '${project.version}'
-main: dev.patatje.hideandseek.Main
+main: dev.patatje.hideandseek.HideAndSeek
 api-version: '1.20'
+depend:
+  - ProtocolLib
+commands:
+  hideandseek:
+    description: Main command for HideAndSeek
+    usage: /hideandseek
+    aliases:
+      - has
