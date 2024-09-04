@@ -71,6 +71,15 @@ public class ConfigManager {
         if(Bukkit.getWorld(config.getString("lobby-location.world")) == null) {
             plugin.getLogger().severe("Invalid world in lobby-location in config.yml");
             Bukkit.getPluginManager().disablePlugin(plugin);
+            return;
+        }
+
+        if(
+                !config.contains("request.enabled") ||
+                !config.contains("request.url")
+        ) {
+            plugin.getLogger().severe("Invalid request settings in config.yml");
+            Bukkit.getPluginManager().disablePlugin(plugin);
         }
     }
 
@@ -107,5 +116,13 @@ public class ConfigManager {
                 (float) config.getDouble("lobby-location.yaw"),
                 (float) config.getDouble("lobby-location.pitch")
         );
+    }
+
+    public static boolean isRequestEnabled() {
+        return config.getBoolean("request.enabled");
+    }
+
+    public static String getRequestUrl() {
+        return config.getString("request.url");
     }
 }

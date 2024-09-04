@@ -1,9 +1,9 @@
 package dev.patatje.hideandseek.instances;
 
 import dev.patatje.hideandseek.HideAndSeek;
+import dev.patatje.hideandseek.enums.GameState;
 import dev.patatje.hideandseek.managers.ConfigManager;
 import dev.patatje.hideandseek.utils.BlockUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -42,7 +42,8 @@ public class TransformCountdown {
         Location location = player.getLocation();
 
         if(location.getBlock().getType() != Material.AIR) return;
-        if(location.add(0, -1, 0).getBlock().getType() != Material.AIR) return;
+        if(location.add(0, -1, 0).getBlock().getType() == Material.AIR) return;
+        if(arena.getState() != GameState.INGAME) return;
 
         BlockUtils.spawnBlock(player, arena.getGame().getDisguise(player), plugin);
 

@@ -6,7 +6,6 @@ import dev.patatje.hideandseek.guis.BlockPickerGUI;
 import dev.patatje.hideandseek.managers.ConfigManager;
 import dev.patatje.hideandseek.utils.ChatUtils;
 import dev.patatje.hideandseek.utils.BlockUtils;
-import net.minecraft.world.level.block.Block;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
@@ -19,24 +18,24 @@ public class Arena {
     private final HideAndSeek plugin;
 
     private final String name;
-    private final String Description;
-    private final World world;
+    private final String description;
+    private final Material icon;
 
     private final Location waitingLocation;
     private final List<Location> spawnPoints;
     private final List<Material> allowedDisguises;
 
     private GameState state;
-    private List<UUID> players;
+    private final List<UUID> players;
     private LobbyCountdown lobbyCountdown;
     private Game game;
 
-    public Arena(HideAndSeek plugin, String name, String Description, World world, Location waitingLocation, List<Location> spawnPoints, List<Material> allowedDisguises) {
+    public Arena(HideAndSeek plugin, String name, String description, Material icon, Location waitingLocation, List<Location> spawnPoints, List<Material> allowedDisguises) {
         this.plugin = plugin;
 
         this.name = name;
-        this.Description = Description;
-        this.world = world;
+        this.description = description;
+        this.icon = icon;
         this.waitingLocation = waitingLocation;
         this.spawnPoints = spawnPoints;
         this.allowedDisguises = allowedDisguises;
@@ -101,7 +100,11 @@ public class Arena {
     }
 
     public String getDescription() {
-        return Description;
+        return description;
+    }
+
+    public Material getIcon() {
+        return icon;
     }
 
     public Location getWaitingLocation() {
@@ -131,7 +134,7 @@ public class Arena {
     public void addPlayer(Player player) {
         players.add(player.getUniqueId());
         player.teleport(getWaitingLocation());
-        player.setGameMode(GameMode.ADVENTURE);
+        player.setGameMode(GameMode.SURVIVAL);
         player.getInventory().clear();
         player.getInventory().setArmorContents(null);
         player.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, Integer.MAX_VALUE, 0, true, false));
@@ -170,10 +173,11 @@ public class Arena {
         }
 
         if(state == GameState.INGAME) {
-            if(game.getSeekers().isEmpty() || game.getHiders().isEmpty()) {
-                sendMessage("&aDe game is gestopt omdat er niet genoeg spelers meer zijn!");
-                //TODO: make it so if there are no hiders left, the seekers win and vice versa
-                stop(false);
+            if(game.getSeekers().isEmpty()) {
+                sendMessage("&aAlle zoekers hebben het spel verlaten! De verstoppers hebben gewonnen!");
+                game.winHiders(false);
+            } else if(game.getHiders().isEmpty()) {
+                game.winSeekers();
             }
         }
     }

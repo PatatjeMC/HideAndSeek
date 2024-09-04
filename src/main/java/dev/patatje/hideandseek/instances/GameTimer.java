@@ -41,8 +41,7 @@ public class GameTimer extends BukkitRunnable {
         if (countdownTime == 0) {
             cancel();
             isRunning = false;
-            arena.sendMessage("&aDe zoekers zijn er niet in geslaagd om alle verstoppers op tijd te vinden! De verstoppers hebben gewonnen!");
-            arena.stop(true);
+            arena.getGame().winHiders(true);
 
             return;
         }

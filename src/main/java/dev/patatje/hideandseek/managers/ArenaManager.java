@@ -47,6 +47,7 @@ public class ArenaManager {
             if(
                     !arenaConfig.contains("name") ||
                     !arenaConfig.contains("description") ||
+                    !arenaConfig.contains("icon") ||
                     !arenaConfig.contains("world") ||
                     !arenaConfig.contains("waiting-room") ||
                     !arenaConfig.contains("spawn-points")
@@ -58,6 +59,15 @@ public class ArenaManager {
             // Get some basic information about the arena
             String name = arenaConfig.getString("name");
             String description = arenaConfig.getString("description");
+
+            Material icon = Material.getMaterial(arenaConfig.getString("icon"));
+
+            // Check if the icon is a valid material
+            if(icon == null) {
+                plugin.getLogger().severe("Invalid icon for arena " + arenaKey);
+                continue;
+            }
+
             World world = Bukkit.getWorld(arenaConfig.getString("world"));
 
             // Check if the world exists
@@ -139,7 +149,7 @@ public class ArenaManager {
             }
 
             // Create a new arena object and add it to the list of arenas
-            Arena arena = new Arena(plugin, name, description, world, waitingLocation, spawnPoints, allowedBlocks);
+            Arena arena = new Arena(plugin, name, description, icon, waitingLocation, spawnPoints, allowedBlocks);
             arenas.put(arenaKey, arena);
         }
     }

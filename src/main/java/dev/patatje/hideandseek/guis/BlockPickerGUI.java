@@ -47,7 +47,9 @@ public class BlockPickerGUI implements Listener {
     public void onClick(InventoryClickEvent event) {
         if(event.getInventory().equals(inventory)) {
             event.setCancelled(true);
+        }
 
+        if(event.getClickedInventory().equals(inventory)) {
             if(event.getCurrentItem() == null || event.getCurrentItem().getType() == Material.AIR) return;
 
             Material material = event.getCurrentItem().getType();

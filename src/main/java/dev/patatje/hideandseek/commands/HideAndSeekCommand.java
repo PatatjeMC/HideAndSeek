@@ -2,10 +2,12 @@ package dev.patatje.hideandseek.commands;
 
 import dev.patatje.hideandseek.HideAndSeek;
 import dev.patatje.hideandseek.enums.GameState;
+import dev.patatje.hideandseek.guis.ArenaPickerGUI;
 import dev.patatje.hideandseek.instances.Arena;
 import dev.patatje.hideandseek.managers.ConfigManager;
 import dev.patatje.hideandseek.utils.ChatUtils;
-import org.bukkit.Material;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,20 +23,25 @@ public class HideAndSeekCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if(!(sender instanceof Player player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("Je moet een speler zijn om dit commando uit te voeren.");
             return true;
         }
 
-        if(args.length == 1 && args[0].equalsIgnoreCase("list")) {
+        if (args.length == 1 && args[0].equalsIgnoreCase("list")) {
             player.sendMessage(ChatUtils.colorize("&aArena's:"));
-            for(Arena arena : plugin.getArenaManager().getArenas().values()) {
-                //TODO: make the arena's clickable
-                player.sendMessage(ChatUtils.colorize("&7- &a" + arena.getName() + " &7- &f" + arena.getDescription()));
+            for (String arenaKey : plugin.getArenaManager().getArenas().keySet()) {
+                Arena arena = plugin.getArenaManager().getArena(arenaKey);
+
+                TextComponent message = new TextComponent(TextComponent.fromLegacyText(ChatUtils.colorize("&7- &a" + arena.getName() + " &7- &f" + arena.getDescription())));
+                message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/hideandseek join " + arenaKey));
+
+                player.spigot().sendMessage(message);
             }
 
+        } else if (args.length == 1 && args[0].equalsIgnoreCase("join")) {
+            new ArenaPickerGUI(plugin, player).open();
         } else if (args.length == 2 && args[0].equalsIgnoreCase("join")) {
-            //TODO: make this a gui instead
             Arena arena = plugin.getArenaManager().getArena(args[1]);
             if(arena == null) {
                 player.sendMessage(ChatUtils.colorize("&cDeze arena bestaat niet."));
@@ -70,7 +77,7 @@ public class HideAndSeekCommand implements CommandExecutor {
         } else {
             player.sendMessage(ChatUtils.colorize("&aHide and Seek Commandos:"));
             player.sendMessage(ChatUtils.colorize("&7- &a/hideandseek list &7- &fKrijg een lijst van alle arena's."));
-            player.sendMessage(ChatUtils.colorize("&7- &a/hideandseek join <arena> &7- &fNeem deel aan een arena."));
+            player.sendMessage(ChatUtils.colorize("&7- &a/hideandseek join [arena] &7- &fNeem deel aan een arena."));
             player.sendMessage(ChatUtils.colorize("&7- &a/hideandseek leave &7- &fVerlaat de arena waar je in zit."));
         }
 

@@ -1,6 +1,7 @@
 arena1:
   name: "&cVoorbeeld Arena 1"
   description: "&7Dit is een voorbeeld arena"
+  icon: "DIAMOND_SWORD"
   world: "world"
   waiting-room:
     world: "world"

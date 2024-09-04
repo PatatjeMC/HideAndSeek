@@ -4,7 +4,6 @@ lobby-timer: 30
 head-start-timer: 60
 game-timer: 180
 transform-timer: 3
-hider-health: 3
 lobby-location:
     world: world
     x: 0.5
@@ -12,3 +11,7 @@ lobby-location:
     z: 0.5
     yaw: 0
     pitch: 0
+request:
+    enabled: false
+    url: "https://api.example.com"
+

@@ -1,7 +1,10 @@
 package dev.patatje.hideandseek.instances;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import dev.patatje.hideandseek.HideAndSeek;
 import dev.patatje.hideandseek.enums.GameState;
+import dev.patatje.hideandseek.managers.ConfigManager;
 import dev.patatje.hideandseek.utils.ChatUtils;
 import dev.patatje.hideandseek.utils.BlockUtils;
 import org.bukkit.Bukkit;
@@ -10,7 +13,13 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.json.simple.JSONArray;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 public class Game {
@@ -18,7 +27,9 @@ public class Game {
     private final HideAndSeek plugin;
 
     private final Arena arena;
+    private UUID originalSeeker;
     private final List<UUID> seekers;
+    private List<UUID> originalHiders;
     private final List<UUID> hiders;
     private final HashMap<UUID, Material> playerDisguises;
     private final HashMap<UUID, Integer> playerHealth;
@@ -47,6 +58,7 @@ public class Game {
         headstartCountdown.start();
 
         seekers.add(arena.getPlayers().get(new Random().nextInt(arena.getPlayers().size())));
+        originalSeeker = seekers.get(0);
 
         for (UUID uuid : arena.getPlayers()) {
             Player player = Bukkit.getPlayer(uuid);
@@ -71,6 +83,8 @@ public class Game {
 
             }
         }
+
+        originalHiders = new ArrayList<>(hiders);
     }
 
     public void setDisguise(Player player, Material material) {
@@ -101,13 +115,15 @@ public class Game {
     }
 
     public void findHider(Player seeker, Player hider) {
-        BlockUtils.removeFakeFallingBlock(hider.getUniqueId());
+        hiders.remove(hider.getUniqueId());
+        seekers.add(hider.getUniqueId());
+
         BlockUtils.removeBlock(hider, plugin);
+        getTransformCountdown(hider).cancel();
+        BlockUtils.removeFakeFallingBlock(hider.getUniqueId());
         hider.removePotionEffect(PotionEffectType.INVISIBILITY);
         hider.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(20);
         hider.setHealth(20);
-        hiders.remove(hider.getUniqueId());
-        seekers.add(hider.getUniqueId());
 
         if(seeker != null) {
             arena.sendMessage("&a" + seeker.getName() + " heeft " + hider.getName() + " gevonden!");
@@ -116,9 +132,7 @@ public class Game {
         }
 
         if(hiders.isEmpty()) {
-            arena.sendMessage("&aDe zoekers hebben alle verstoppers gevonden! De zoekers hebben gewonnen!");
-            arena.stop(true);
-            return;
+            winSeekers();
         }
 
         hider.sendMessage(ChatUtils.colorize("&aJe bent gevonden! Je bent nu een zoeker!"));
@@ -133,12 +147,93 @@ public class Game {
         }
 
         if(playerHealth.get(hider.getUniqueId()) <= 0) {
-            findHider(seeker, hider);
             hider.sendTitle(ChatUtils.colorize("&cJe bent gevonden!"), "", 10, 40, 10);
+            findHider(seeker, hider);
         } else {
             hider.setHealth(playerHealth.get(hider.getUniqueId()));
         }
+    }
 
+    public void winSeekers() {
+        arena.sendMessage("&aAlle verstoppers zijn gevonden! De zoekers hebben gewonnen!");
+        arena.setState(GameState.END);
+
+        for(UUID uuid : arena.getPlayers()) {
+            if(originalSeeker.equals(uuid)) {
+                Player player = Bukkit.getPlayer(uuid);
+                player.sendTitle(ChatUtils.colorize("&aJe hebt gewonnen!"), "", 10, 40, 10);
+            } else {
+                Player player = Bukkit.getPlayer(uuid);
+                player.sendTitle(ChatUtils.colorize("&cJe hebt verloren!"), "", 10, 40, 10);
+            }
+        }
+
+        stopRunnables();
+
+        sendRequest("seekers");
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> arena.stop(true), 100L);
+    }
+
+    public void winHiders(boolean sendMessage) {
+        if(sendMessage) {
+            arena.sendMessage("&aDe tijd is om! De verstoppers hebben gewonnen!");
+        }
+        arena.setState(GameState.END);
+
+        for(UUID uuid : arena.getPlayers()) {
+            if(originalHiders.contains(uuid)) {
+                Player player = Bukkit.getPlayer(uuid);
+                player.sendTitle(ChatUtils.colorize("&aJe hebt gewonnen!"), "", 10, 40, 10);
+            } else {
+                Player player = Bukkit.getPlayer(uuid);
+                player.sendTitle(ChatUtils.colorize("&cJe hebt verloren!"), "", 10, 40, 10);
+            }
+        }
+
+        stopRunnables();
+
+        sendRequest("hiders");
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> arena.stop(true), 100L);
+    }
+
+    private void sendRequest(String winner) {
+        if(!ConfigManager.isRequestEnabled()) {
+            return;
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            JsonObject body = new JsonObject();
+
+            body.addProperty("winners", winner);
+            JsonArray hiders = new JsonArray();
+            for(UUID uuid : originalHiders) {
+                JsonObject hider = new JsonObject();
+                hider.addProperty("uuid", uuid.toString());
+                hider.addProperty("name", Bukkit.getPlayer(uuid).getName());
+                hiders.add(hider);
+            }
+            body.add("hiders", hiders);
+
+            JsonObject seeker = new JsonObject();
+            seeker.addProperty("uuid", originalSeeker.toString());
+            seeker.addProperty("name", Bukkit.getPlayer(originalSeeker).getName());
+            body.add("seeker", seeker);
+
+            HttpClient httpClient = HttpClient.newHttpClient();
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(ConfigManager.getRequestUrl()))
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString()));
+
+            HttpRequest request = requestBuilder.build();
+
+            try {
+                httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (IOException | InterruptedException e) {
+                plugin.getLogger().severe("Failed to send request to " + ConfigManager.getRequestUrl());
+            }
+        });
     }
 
     public List<UUID> getSeekers() {
@@ -150,8 +245,6 @@ public class Game {
     }
 
     public void stopRunnables() {
-        // TODO: fix errors when cancelling a task that isn't running : only need to test the fix
-
         headstartCountdown.cancel();
         gameTimer.cancel();
         for(TransformCountdown transformCountdown : transformCountdowns.values()) {
