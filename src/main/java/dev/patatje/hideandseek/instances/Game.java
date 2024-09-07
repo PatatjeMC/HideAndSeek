@@ -33,6 +33,7 @@ public class Game {
     private final List<UUID> hiders;
     private final HashMap<UUID, Material> playerDisguises;
     private final HashMap<UUID, Integer> playerHealth;
+    private long startTime;
 
     private final HeadstartCountdown headstartCountdown;
 
@@ -59,6 +60,8 @@ public class Game {
 
         seekers.add(arena.getPlayers().get(new Random().nextInt(arena.getPlayers().size())));
         originalSeeker = seekers.get(0);
+
+        startTime = System.currentTimeMillis();
 
         for (UUID uuid : arena.getPlayers()) {
             Player player = Bukkit.getPlayer(uuid);
@@ -206,6 +209,8 @@ public class Game {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             JsonObject body = new JsonObject();
 
+            long elapsedTime = System.currentTimeMillis() - startTime;
+
             body.addProperty("winners", winner);
             JsonArray hiders = new JsonArray();
             for(UUID uuid : originalHiders) {
@@ -220,6 +225,8 @@ public class Game {
             seeker.addProperty("uuid", originalSeeker.toString());
             seeker.addProperty("name", Bukkit.getPlayer(originalSeeker).getName());
             body.add("seeker", seeker);
+
+            body.addProperty("time", elapsedTime);
 
             HttpClient httpClient = HttpClient.newHttpClient();
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
